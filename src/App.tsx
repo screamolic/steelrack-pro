@@ -204,13 +204,16 @@ export default function App() {
     <div className="bg-slate-900 text-slate-100 font-sans h-screen w-full flex flex-col overflow-hidden selection:bg-amber-400 selection:text-slate-900">
       {/* Header Bar */}
       <header className="border-b border-slate-700 p-4 lg:p-6 flex flex-col sm:flex-row justify-between items-center shrink-0">
-        <div className="text-center sm:text-left">
-          <h1 className="text-3xl lg:text-4xl font-black tracking-tighter uppercase leading-none">
-            SteelRack <span className="text-amber-400">Pro</span>
-          </h1>
-          <p className="text-xs text-slate-400 font-mono mt-1 uppercase tracking-widest">
-            Kalkulasi & Layout Rak Siku
-          </p>
+        <div className="text-center sm:text-left flex items-center justify-center sm:justify-start gap-4">
+          <img src="/favicon.svg" alt="Logo" className="w-10 h-10 lg:w-12 lg:h-12" />
+          <div>
+            <h1 className="text-3xl lg:text-4xl font-black tracking-tighter uppercase leading-none">
+              SteelRack <span className="text-amber-400">Pro</span>
+            </h1>
+            <p className="text-xs text-slate-400 font-mono mt-1 uppercase tracking-widest text-left">
+              Kalkulasi & Layout Rak Siku
+            </p>
+          </div>
         </div>
         <div className="flex gap-4 mt-4 sm:mt-0">
           <button onClick={() => setShowSaved(true)} className="text-[10px] uppercase font-black bg-slate-800 text-amber-400 px-4 py-2 hover:bg-slate-700 transition-colors border border-slate-700 flex items-center gap-2 tracking-widest duration-200">
@@ -225,7 +228,7 @@ export default function App() {
 
       <main className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-0 overflow-hidden">
         {/* Left Sidebar: Inputs */}
-        <aside className="col-span-1 lg:col-span-3 border-r border-slate-700 bg-slate-800/50 p-6 flex flex-col gap-6 overflow-y-auto">
+        <aside className="col-span-1 lg:col-span-3 border-r border-slate-700 bg-slate-800/50 p-6 flex flex-col gap-6 overflow-y-auto custom-scrollbar">
           <div className="flex p-1 bg-slate-900 border border-slate-700 shrink-0">
             <button
               onClick={() => setMode('bahan')}
@@ -408,7 +411,7 @@ export default function App() {
         </div>
 
         {/* Right Sidebar: Calculations */}
-        <aside className="col-span-1 lg:col-span-3 border-l border-slate-700 p-6 flex flex-col overflow-y-auto">
+        <aside className="col-span-1 lg:col-span-3 border-l border-slate-700 p-6 flex flex-col overflow-y-auto custom-scrollbar">
           <h2 className="text-xs font-bold text-amber-400 uppercase tracking-widest mb-6">Daftar Material / Hasil</h2>
           
           <div className="space-y-8 flex-1">
@@ -457,7 +460,7 @@ export default function App() {
 
                     <div className="bg-slate-800 border-l-2 border-slate-600 p-4 mt-6">
                       <p className="text-[10px] text-slate-400 font-mono mb-2 uppercase font-bold">Detail Potongan Bahan</p>
-                      <div className="text-xs text-slate-500 font-mono space-y-2 max-h-[250px] overflow-auto hidden-scrollbar">
+                      <div className="text-xs text-slate-500 font-mono space-y-2">
                          {bahanRes.bins?.map((bin, i) => (
                            <div key={i} className="border-b border-slate-700/50 pb-2 mb-2 last:border-0 last:pb-0 last:mb-0">
                              <div className="text-slate-300 font-bold mb-1">Batang #{i+1}</div>
@@ -586,7 +589,7 @@ export default function App() {
               <h3 className="font-black text-amber-400 flex items-center gap-2 uppercase tracking-widest"><Bookmark className="w-5 h-5"/> Hasil Tersimpan</h3>
               <button onClick={() => setShowSaved(false)} className="text-slate-400 hover:text-white p-1 bg-slate-800 rounded"><X className="w-5 h-5"/></button>
             </div>
-            <div className="p-4 overflow-y-auto flex-1 space-y-4">
+            <div className="p-4 overflow-y-auto flex-1 space-y-4 custom-scrollbar">
                {savedProjects.length === 0 ? (
                  <p className="text-slate-500 text-center py-12 font-mono uppercase tracking-widest text-sm">Belum ada hasil yang disimpan.</p>
                ) : (

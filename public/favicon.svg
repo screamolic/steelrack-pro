@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Background -->
+  <rect width="512" height="512" rx="112" fill="#0f172a" />
+  <!-- Slotted Angle Iron Shape -->
+  <path d="M140 140 h 232 v 232 h -52 v -180 h -180 z" fill="#f59e0b" />
+  <!-- Slots (Holes) -->
+  <circle cx="166" cy="166" r="14" fill="#0f172a"/>
+  <circle cx="218" cy="166" r="14" fill="#0f172a"/>
+  <circle cx="270" cy="166" r="14" fill="#0f172a"/>
+  <circle cx="322" cy="166" r="14" fill="#0f172a"/>
+  <circle cx="346" cy="218" r="14" fill="#0f172a"/>
+  <circle cx="346" cy="270" r="14" fill="#0f172a"/>
+  <circle cx="346" cy="322" r="14" fill="#0f172a"/>
+</svg>
