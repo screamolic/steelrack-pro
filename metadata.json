@@ -1,0 +1,6 @@
+{
+  "name": "Kalkulator Rak Besi Siku",
+  "description": "Tool untuk kalkulasi bahan dan mencari dimensi rak besi siku, lengkap dengan 3D preview secara realtime.",
+  "requestFramePermissions": [],
+  "majorCapabilities": []
+}
