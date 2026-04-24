@@ -48,8 +48,21 @@ export function calculateMaterial(
     }
   }
 
-  const totalBaut = susun * 16;
-  const totalPlat = usePlates ? 16 : 0; // 8 for top tier, 8 for bottom tier (2 plates per corner)
+  let totalBaut = 0;
+  let totalPlat = 0;
+  
+  if (usePlates) {
+    if (susun >= 2) {
+      totalPlat = 16; // 8 top, 8 bottom
+      totalBaut = (2 * 4 * 6) + ((susun - 2) * 4 * 2); // 48 + (susun-2)*8
+    } else {
+      totalPlat = 8;
+      totalBaut = 4 * 6; // 24
+    }
+  } else {
+    totalBaut = susun * 4 * 2; // 8 baut/susun
+  }
+
   const cost = (bins.length * hargaBatang) + (totalBaut * hargaBaut) + (totalPlat * hargaPlat);
   const span = Math.max(p, l, 50); 
   const loadCapacity = Math.floor((ketebalan * 60) * Math.min(1.5, Math.max(0.4, 100 / span)));

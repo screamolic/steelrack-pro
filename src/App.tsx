@@ -449,7 +449,11 @@ export default function App() {
                           <span className="font-mono text-xl font-bold text-slate-200">x {bahanRes.totalBaut}</span>
                         </div>
                         <span className="text-[10px] text-slate-500 mt-1 uppercase tracking-widest text-right">
-                          ({susun} susun × 4 sudut × 4 baut)
+                          {usePlates && susun >= 2 
+                            ? `(Atas/Bawah: 6 baut/sudut, Tengah: 2 baut/sudut)`
+                            : usePlates && susun === 1 
+                            ? `(6 baut per sudut dengan plat)`
+                            : `(2 baut per sudut tanpa plat)`}
                         </span>
                       </div>
                       <div className="flex justify-between items-center">
