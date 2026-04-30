@@ -1,0 +1,63 @@
+{
+  "entities": {
+    "Plan": {
+      "title": "Saved Plan",
+      "description": "A saved shelving plan.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Optional user ID of the creator. Can be null if anonymous."
+        },
+        "name": {
+          "type": "string"
+        },
+        "mode": {
+          "type": "string"
+        },
+        "unit": {
+          "type": "string"
+        },
+        "inputs": {
+          "type": "object",
+          "properties": {
+            "p": { "type": "number" },
+            "l": { "type": "number" },
+            "t": { "type": "number" },
+            "susun": { "type": "number" },
+            "ketebalan": { "type": "number" },
+            "hargaBatang": { "type": "number" },
+            "hargaBaut": { "type": "number" },
+            "hargaPlat": { "type": "number" },
+            "usePlates": { "type": "boolean" },
+            "pBatangStr": { "type": "string" },
+            "jBatangStr": { "type": "string" }
+          }
+        },
+        "results": {
+          "type": "object",
+          "properties": {
+            "sticksNeeded": { "type": "number" },
+            "totalBaut": { "type": "number" },
+            "totalPlat": { "type": "number" },
+            "totalSisa": { "type": "number" },
+            "cost": { "type": "number" }
+          }
+        },
+        "createdAt": {
+          "type": "timestamp"
+        },
+        "expiresAt": {
+          "type": "timestamp"
+        }
+      },
+      "required": ["name", "mode", "unit", "inputs", "createdAt", "expiresAt"]
+    }
+  },
+  "firestore": {
+    "plans/{planId}": {
+      "schema": "Plan",
+      "description": "Shared and saved plans."
+    }
+  }
+}

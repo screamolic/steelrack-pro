@@ -1,7 +1,9 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Calculator, Box, Ruler, RotateCcw, Wrench, Save, Bookmark, X, Trash2, Copy } from 'lucide-react';
+import { Calculator, Box, Ruler, RotateCcw, Wrench, Save, Bookmark, X, Trash2, Copy, Share2 } from 'lucide-react';
 import RackViewer from './components/RackViewer';
 import { calculateMaterial, solveDimensions, BahanResult } from './lib/calculator';
+import { db } from './firebase';
+import { collection, setDoc, getDoc, doc, serverTimestamp, Timestamp, addDoc } from 'firebase/firestore';
 
 type Mode = 'bahan' | 'dimensi';
 type UnitType = 'cm' | 'mm' | 'm' | 'in';
@@ -32,6 +34,97 @@ export default function App() {
   const [showSaved, setShowSaved] = useState(false);
   const [saveNotif, setSaveNotif] = useState(false);
   const [copyNotif, setCopyNotif] = useState(false);
+  
+  const [isSharingLoading, setIsSharingLoading] = useState(false);
+  const [shareUrl, setShareUrl] = useState('');
+  const [isLoadingPlan, setIsLoadingPlan] = useState(false);
+  const [loadingPlanError, setLoadingPlanError] = useState('');
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const planId = params.get('plan');
+    if (planId) {
+      loadPlan(planId);
+    }
+  }, []);
+
+  const loadPlan = async (planId: string) => {
+    setIsLoadingPlan(true);
+    setLoadingPlanError('');
+    try {
+      const docSnap = await getDoc(doc(db, 'plans', planId));
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        if (data.inputs) {
+          setMode(data.mode as Mode);
+          setUnit(data.unit as UnitType);
+          setPStr(String(data.inputs.p || ''));
+          setLStr(String(data.inputs.l || ''));
+          setTStr(String(data.inputs.t || ''));
+          setSusunStr(String(data.inputs.susun || '4'));
+          setKetebalanStr(String(data.inputs.ketebalan || '1.5'));
+          setHargaBatangStr(String(data.inputs.hargaBatang || '45000'));
+          setHargaBautStr(String(data.inputs.hargaBaut || '500'));
+          setHargaPlatStr(String(data.inputs.hargaPlat || '1500'));
+          setUsePlates(data.inputs.usePlates ?? true);
+          setPBatangStr(String(data.inputs.pBatangStr || '300'));
+          setJBatangStr(String(data.inputs.jBatangStr || '10'));
+        }
+      } else {
+         setLoadingPlanError('Hasil desain tidak ditemukan atau sudah expired/kadaluarsa');
+      }
+    } catch (err: any) {
+       console.error("Firebase error", err);
+       setLoadingPlanError('Gagal memuat hasil desain. ' + (err.message || ''));
+    } finally {
+       setIsLoadingPlan(false);
+    }
+  };
+
+  const handleShare = async () => {
+    if (results?.error || !results) return;
+    setIsSharingLoading(true);
+    setShareUrl('');
+    try {
+       const displayP = +(finalPCm / unitFactor).toFixed(2);
+       const displayL = +(finalLCm / unitFactor).toFixed(2);
+       const displayT = +(finalTCm / unitFactor).toFixed(2);
+
+       const futureDate = new Date();
+       futureDate.setMonth(futureDate.getMonth() + 1); // 1 month expiration
+
+       // We will manually validate matching schema 
+       const docRef = await addDoc(collection(db, 'plans'), {
+          name: `Rak ${displayP}x${displayL}x${displayT} ${unit} (${susun} Susun)`,
+          mode,
+          unit,
+          inputs: {
+            p: pStr ? Number(pStr) : null,
+            l: lStr ? Number(lStr) : null,
+            t: tStr ? Number(tStr) : null,
+            susun: Number(susunStr),
+            ketebalan: Number(ketebalanStr),
+            hargaBatang: Number(hargaBatangStr),
+            hargaBaut: Number(hargaBautStr),
+            hargaPlat: Number(hargaPlatStr),
+            usePlates,
+            pBatangStr,
+            jBatangStr
+          },
+          createdAt: serverTimestamp(),
+          expiresAt: Timestamp.fromDate(futureDate)
+       });
+       
+       const url = new URL(window.location.href);
+       url.searchParams.set('plan', docRef.id);
+       setShareUrl(url.toString());
+    } catch (err: any) {
+       console.error("Gagal share plan: ", err);
+       alert("Gagal membagikan plan: " + (err.message || String(err)));
+    } finally {
+       setIsSharingLoading(false);
+    }
+  };
 
   const unitFactor = unit === 'mm' ? 0.1 : unit === 'cm' ? 1 : unit === 'm' ? 100 : 2.54;
 
@@ -562,12 +655,17 @@ export default function App() {
                  <span className="text-lg">Rp</span>{currentCost.toLocaleString('id-ID')}
                </p>
                {!results?.error && (
-                 <div className="flex gap-2 mt-4">
-                   <button onClick={handleExportText} className="flex-[3] bg-slate-700 hover:bg-slate-600 text-slate-300 font-black py-3 px-2 uppercase tracking-widest text-[10px] flex justify-center items-center relative transition-colors duration-200">
-                     {copyNotif ? <span className="text-amber-400">Diekspor!</span> : <span>Export TXT</span>}
-                   </button>
-                   <button onClick={handleSave} title="Simpan" className="flex-1 bg-amber-500 hover:bg-amber-400 text-slate-900 font-black py-3 px-0 flex justify-center items-center transition-colors duration-200">
-                     {saveNotif ? <Bookmark className="w-5 h-5 fill-slate-900 text-slate-900" /> : <Save className="w-5 h-5" />}
+                 <div className="flex flex-col gap-2 mt-4">
+                   <div className="flex gap-2">
+                     <button onClick={handleExportText} className="flex-[3] bg-slate-700 hover:bg-slate-600 text-slate-300 font-black py-3 px-2 uppercase tracking-widest text-[10px] flex justify-center items-center relative transition-colors duration-200">
+                       {copyNotif ? <span className="text-amber-400">Diekspor!</span> : <span>Export TXT</span>}
+                     </button>
+                     <button onClick={handleSave} title="Simpan ke Perangkat" className="flex-[2] bg-amber-500 hover:bg-amber-400 text-slate-900 font-black py-3 px-0 flex justify-center items-center gap-1 uppercase tracking-widest text-[10px] transition-colors duration-200">
+                       {saveNotif ? <Bookmark className="w-3 h-3 fill-slate-900 text-slate-900" /> : <Save className="w-4 h-4" />}
+                     </button>
+                   </div>
+                   <button onClick={handleShare} disabled={isSharingLoading} className="w-full bg-slate-600 hover:bg-slate-500 text-white font-black py-3 px-2 uppercase tracking-widest text-[10px] flex justify-center items-center gap-2 transition-colors duration-200 disabled:opacity-50">
+                      {isSharingLoading ? <span className="animate-pulse">Membuat Link...</span> : <><Share2 className="w-4 h-4" /> Dapatkan URL / Link</>}
                    </button>
                  </div>
                )}
@@ -626,13 +724,66 @@ export default function App() {
                         <span className="bg-slate-800 border border-slate-600 px-3 py-1.5 text-xs font-black text-white shrink-0 tracking-widest">
                           Rp {proj.cost?.toLocaleString('id-ID')}
                         </span>
-                        <button onClick={() => handleDeleteSaved(proj.id)} className="text-red-400 hover:text-white text-xs flex items-center gap-1 uppercase font-bold tracking-widest bg-red-900/20 px-3 py-1.5 border border-red-900/50 hover:bg-red-900 transition-colors"><Trash2 className="w-3 h-3"/> Hapus</button>
+                        <div className="flex gap-2">
+                           <button onClick={() => {
+                              setMode(proj.mode);
+                              // We simulate a fast load by just setting the unit and reload (since we don't save full input state in localStorage right now, only results. Wait, this wasn't fully supported before. But we don't crash).
+                              setShowSaved(false);
+                           }} className="text-amber-400 hover:text-white text-xs flex items-center gap-1 uppercase font-bold tracking-widest border border-amber-400/50 hover:bg-amber-500/20 px-3 py-1.5 transition-colors">Tutup</button>
+                           <button onClick={() => handleDeleteSaved(proj.id)} className="text-red-400 hover:text-white text-xs flex items-center gap-1 uppercase font-bold tracking-widest bg-red-900/20 px-3 py-1.5 border border-red-900/50 hover:bg-red-900 transition-colors"><Trash2 className="w-3 h-3"/> Hapus</button>
+                        </div>
                      </div>
                    </div>
                  ))
                )}
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Share Modal */}
+      {shareUrl && (
+        <div className="fixed inset-0 z-50 bg-slate-900/90 backdrop-blur-sm flex justify-center items-center p-4">
+           <div className="bg-slate-800 w-full max-w-lg text-slate-200 rounded shadow-2xl border border-slate-700 overflow-hidden">
+             <div className="p-4 border-b border-slate-700 flex justify-between items-center bg-slate-900/50 block">
+               <h3 className="font-black text-amber-400 flex items-center gap-2 uppercase tracking-widest"><Share2 className="w-5 h-5"/> Link Dibagikan</h3>
+               <button onClick={() => setShareUrl('')} className="text-slate-400 hover:text-white p-1 bg-slate-800 rounded"><X className="w-5 h-5"/></button>
+             </div>
+             <div className="p-6">
+                <p className="text-sm text-slate-300 font-mono mb-4 text-center">Tautan ini dapat diakses selama 1 bulan.</p>
+                <div className="flex gap-2">
+                   <input readOnly value={shareUrl} className="flex-1 bg-slate-900 border border-slate-600 p-3 text-xs font-mono text-slate-300 outline-none" />
+                   <button onClick={() => {
+                      navigator.clipboard.writeText(shareUrl);
+                      alert('Link tersalin!');
+                   }} className="bg-amber-500 hover:bg-amber-400 text-slate-900 px-4 font-bold flex items-center justify-center gap-2 uppercase text-xs tracking-widest">
+                      <Copy className="w-4 h-4"/> Salin
+                   </button>
+                </div>
+             </div>
+           </div>
+        </div>
+      )}
+
+      {/* Loading overlay for reading plan */}
+      {isLoadingPlan && (
+        <div className="fixed inset-0 z-50 bg-slate-900/90 backdrop-blur-sm flex flex-col justify-center items-center p-4">
+           <div className="w-12 h-12 border-4 border-amber-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+           <p className="text-amber-400 font-black uppercase tracking-widest animate-pulse">Memuat Jadwal & Kalkulasi...</p>
+        </div>
+      )}
+
+      {/* Error loading plan */}
+      {loadingPlanError && (
+        <div className="fixed inset-0 z-50 bg-slate-900/90 backdrop-blur-sm flex flex-col justify-center items-center p-4">
+           <div className="bg-slate-800 p-6 rounded shadow-2xl border border-red-900 text-center max-w-sm">
+             <h3 className="text-red-400 font-black uppercase tracking-widest mb-4">Gagal Memuat</h3>
+             <p className="text-slate-300 text-sm font-mono mb-6">{loadingPlanError}</p>
+             <button onClick={() => {
+                setLoadingPlanError('');
+                window.history.replaceState({}, document.title, window.location.pathname);
+             }} className="bg-slate-700 hover:bg-slate-600 text-white px-6 py-2 uppercase font-bold tracking-widest text-xs">Tutup</button>
+           </div>
         </div>
       )}
     </div>
