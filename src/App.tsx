@@ -226,9 +226,9 @@ export default function App() {
         </div>
       </header>
 
-      <main className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-0 overflow-hidden">
+      <main className="flex-1 flex flex-col lg:grid lg:grid-cols-12 gap-0 overflow-y-auto lg:overflow-hidden custom-scrollbar">
         {/* Left Sidebar: Inputs */}
-        <aside className="col-span-1 lg:col-span-3 border-r border-slate-700 bg-slate-800/50 p-6 flex flex-col gap-6 overflow-y-auto custom-scrollbar">
+        <aside className="col-span-1 lg:col-span-3 border-b lg:border-b-0 lg:border-r border-slate-700 bg-slate-800/50 p-6 flex flex-col gap-6 lg:overflow-y-auto custom-scrollbar">
           <div className="flex p-1 bg-slate-900 border border-slate-700 shrink-0">
             <button
               onClick={() => setMode('bahan')}
@@ -411,7 +411,7 @@ export default function App() {
         </div>
 
         {/* Right Sidebar: Calculations */}
-        <aside className="col-span-1 lg:col-span-3 border-l border-slate-700 p-6 flex flex-col overflow-y-auto custom-scrollbar">
+        <aside className="col-span-1 lg:col-span-3 lg:border-l border-slate-700 p-6 flex flex-col lg:overflow-y-auto custom-scrollbar">
           <h2 className="text-xs font-bold text-amber-400 uppercase tracking-widest mb-6">Daftar Material / Hasil</h2>
           
           <div className="space-y-8 flex-1">

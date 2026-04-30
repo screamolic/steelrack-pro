@@ -76,13 +76,13 @@ const RackViewer: React.FC<RackViewerProps> = ({ p, l, t, susun, displayP, displ
         <group position={[-widthX / 2, 0, -depthZ / 2]}>
           {/* Dimension Labels */}
           <Text position={[widthX / 2, heightY + 0.1, depthZ]} fontSize={0.08} color="#fbbf24" anchorX="center" anchorY="bottom" outlineWidth={0.005} outlineColor="#000000">
-            P: {p} cm
+            P: {displayP ?? p} {unit ?? 'cm'}
           </Text>
           <Text position={[widthX + 0.1, heightY + 0.1, depthZ / 2]} fontSize={0.08} color="#fbbf24" anchorX="center" anchorY="bottom" rotation={[0, Math.PI / 2, 0]} outlineWidth={0.005} outlineColor="#000000">
-            L: {l} cm
+            L: {displayL ?? l} {unit ?? 'cm'}
           </Text>
           <Text position={[-0.1, heightY / 2, depthZ]} fontSize={0.08} color="#fbbf24" anchorX="right" anchorY="middle" outlineWidth={0.005} outlineColor="#000000">
-            T: {t} cm
+            T: {displayT ?? t} {unit ?? 'cm'}
           </Text>
 
           {/* Vertical Posts */}
