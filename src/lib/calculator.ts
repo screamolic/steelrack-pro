@@ -26,27 +26,108 @@ export function calculateMaterial(
     ...Array(4).fill(t),
     ...Array(2 * susun).fill(p),
     ...Array(2 * susun).fill(l),
-  ].sort((a, b) => b - a); // sort descending for First-Fit Decreasing algorithm
+  ].sort((a, b) => b - a);
 
-  const bins: { pattern: number[]; remaining: number }[] = [];
-
-  for (const piece of pieces) {
-    if (piece > pBatang) {
-      return { error: `Ada dimensi rak (${piece} cm) yang melebihi panjang 1 batang besi (${pBatang} cm). Anda butuh besi yang lebih panjang atau gabungan (tidak disarankan).` };
-    }
-    let placed = false;
-    for (const bin of bins) {
-      if (bin.remaining >= piece) {
-        bin.remaining -= piece;
-        bin.pattern.push(piece);
-        placed = true;
-        break;
-      }
-    }
-    if (!placed) {
-      bins.push({ pattern: [piece], remaining: pBatang - piece });
-    }
+  if (pieces.some(piece => piece > pBatang)) {
+    return { error: `Ada dimensi rak yang melebihi panjang 1 batang besi (${pBatang} cm). Anda butuh besi yang lebih panjang atau gabungan (tidak disarankan).` };
   }
+
+  // 1. Establish a greedy baseline (First-Fit Decreasing)
+  function greedyFFD(items: number[], cap: number) {
+     const b: number[] = [];
+     const p: number[][] = [];
+     for(const item of items) {
+        let placed = false;
+        for(let j=0; j<b.length; j++) {
+           if (b[j] >= item) { b[j] -= item; p[j].push(item); placed = true; break; }
+        }
+        if (!placed) { b.push(cap - item); p.push([item]); }
+     }
+     return { bins: b, patterns: p };
+  }
+
+  let bestSolution = greedyFFD(pieces, pBatang);
+  let bestSolutionDiv = 1;
+
+  // 2. Try symmetric subsets and DFS
+  const counts = new Map<number, number>();
+  for(const pw of pieces) counts.set(pw, (counts.get(pw) || 0) + 1);
+  function gcd(a: number, b: number): number { return b === 0 ? a : gcd(b, a % b); }
+  let g = 0;
+  for(const c of counts.values()) g = gcd(g, c);
+
+  for (let div = g; div >= 1; div--) {
+      if (pieces.length % div !== 0) continue;
+      
+      const groupPieces: number[] = [];
+      for(const [len, count] of counts.entries()) {
+          for(let i=0; i<count/div; i++) groupPieces.push(len);
+      }
+      groupPieces.sort((a,b)=>b-a);
+      
+      const subsetLowerBound = Math.ceil(groupPieces.reduce((a,b)=>a+b,0) / pBatang);
+      const subsetGreedy = greedyFFD(groupPieces, pBatang);
+      
+      let minBins = subsetGreedy.bins.length;
+      let finalPatterns = subsetGreedy.patterns;
+      
+      // If there's room to optimize the subgroup, use bounded DFS
+      if (minBins > subsetLowerBound && groupPieces.length <= 20) {
+          let iters = 0;
+          const currentBins: number[] = [];
+          const currentPatterns: number[][] = [];
+          
+          function solve(index: number) {
+             iters++;
+             if (iters > 20000) return;
+             if (currentBins.length >= minBins) return;
+             if (index === groupPieces.length) {
+                minBins = currentBins.length;
+                finalPatterns = currentPatterns.map(pw => [...pw]);
+                return;
+             }
+             const piece = groupPieces[index];
+             for(let i=0; i<currentBins.length; i++) {
+                 if (currentBins[i] >= piece) {
+                     let isDup = false;
+                     for(let j=0; j<i; j++) { if (currentBins[j] === currentBins[i]) { isDup = true; break; } }
+                     if (isDup) continue;
+                     
+                     currentBins[i] -= piece;
+                     currentPatterns[i].push(piece);
+                     solve(index + 1);
+                     currentPatterns[i].pop();
+                     currentBins[i] += piece;
+                 }
+             }
+             if (currentBins.length + 1 < minBins) {
+                 currentBins.push(pBatang - piece);
+                 currentPatterns.push([piece]);
+                 solve(index + 1);
+                 currentPatterns.pop();
+                 currentBins.pop();
+             }
+          }
+          solve(0);
+      }
+      
+      const totalBinsIfUsed = minBins * div;
+      if (totalBinsIfUsed < bestSolution.patterns.length || 
+         (totalBinsIfUsed === bestSolution.patterns.length && div > bestSolutionDiv)) {
+          const expandedBins: number[] = [];
+          const expandedPatterns: number[][] = [];
+          for(let i=0; i<div; i++) {
+              finalPatterns.forEach(pw => {
+                  expandedPatterns.push([...pw]);
+                  expandedBins.push(pBatang - pw.reduce((a,b)=>a+b,0));
+              });
+          }
+          bestSolution = { bins: expandedBins, patterns: expandedPatterns };
+          bestSolutionDiv = div;
+      }
+  }
+
+  const bins = bestSolution.patterns.map((p, i) => ({ pattern: p, remaining: bestSolution.bins[i] }));
 
   let totalBaut = 0;
   let totalPlat = 0;

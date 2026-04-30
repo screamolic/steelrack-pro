@@ -254,10 +254,19 @@ export default function App() {
 
     if (resBins && resBins.length > 0) {
       text += `[ PANDUAN PEMOTONGAN BESI ]\n`;
-      resBins.forEach((bin: any, index: number) => {
+      const binCounts = new Map<string, {pattern: number[], remaining: number, count: number}>();
+      resBins.forEach((bin: any) => {
+         const key = bin.pattern.join(',');
+         if (binCounts.has(key)) {
+            binCounts.get(key)!.count += 1;
+         } else {
+            binCounts.set(key, { ...bin, count: 1 });
+         }
+      });
+      Array.from(binCounts.values()).forEach((bin, index) => {
         const cuts = bin.pattern.map((p: number) => +(p / unitFactor).toFixed(2)).join(', ');
         const rSisa = +(bin.remaining / unitFactor).toFixed(2);
-        text += `Batang #${index + 1}: Potong [ ${cuts} ] -> Sisa: ${rSisa} ${unit}\n`;
+        text += `${bin.count}x Batang Siku: Potong [ ${cuts} ] -> Sisa tiap batang: ${rSisa} ${unit}\n`;
       });
       text += `\n`;
     }
@@ -558,15 +567,26 @@ export default function App() {
                     <div className="bg-slate-800 border-l-2 border-slate-600 p-4 mt-6">
                       <p className="text-[10px] text-slate-400 font-mono mb-2 uppercase font-bold">Detail Potongan Bahan</p>
                       <div className="text-xs text-slate-500 font-mono space-y-2">
-                         {bahanRes.bins?.map((bin, i) => (
-                           <div key={i} className="border-b border-slate-700/50 pb-2 mb-2 last:border-0 last:pb-0 last:mb-0">
-                             <div className="text-slate-300 font-bold mb-1">Batang #{i+1}</div>
-                             <div className="flex justify-between items-center text-[10px] sm:text-xs">
-                               <span>Potong: [{bin.pattern.map(p => +(p/unitFactor).toFixed(2)).join(', ')}]</span>
-                               <span className="text-amber-400 font-bold">Sisa: {+(bin.remaining/unitFactor).toFixed(2)} {unit}</span>
-                             </div>
-                           </div>
-                         ))}
+                         {(() => {
+                            const binCounts = new Map<string, {pattern: number[], remaining: number, count: number}>();
+                            bahanRes.bins?.forEach(bin => {
+                               const key = bin.pattern.join(',');
+                               if (binCounts.has(key)) {
+                                  binCounts.get(key)!.count += 1;
+                               } else {
+                                  binCounts.set(key, { ...bin, count: 1 });
+                               }
+                            });
+                            return Array.from(binCounts.values()).map((bin, i) => (
+                              <div key={i} className="border-b border-slate-700/50 pb-2 mb-2 last:border-0 last:pb-0 last:mb-0">
+                                <div className="text-slate-300 font-bold mb-1">{bin.count}x Batang Siku</div>
+                                <div className="flex justify-between items-center text-[10px] sm:text-xs">
+                                  <span>Potong: [{bin.pattern.map(p => +(p/unitFactor).toFixed(2)).join(', ')}]</span>
+                                  <span className="text-amber-400 font-bold">Sisa: {+(bin.remaining/unitFactor).toFixed(2)} {unit}</span>
+                                </div>
+                              </div>
+                            ));
+                         })()}
                       </div>
                     </div>
                   </>
@@ -616,9 +636,11 @@ export default function App() {
                       </p>
                       <button 
                         onClick={() => {
-                          setPStr(String(+(dimensiRes.p / unitFactor).toFixed(2)));
-                          setLStr(String(+(dimensiRes.l / unitFactor).toFixed(2)));
-                          setTStr(String(+(dimensiRes.t / unitFactor).toFixed(2)));
+                          // Round down to 2 decimals to prevent rounding up issues (which increases the length and breaks packing)
+                          const floor2 = (num: number) => Math.floor(num * 100) / 100;
+                          setPStr(String(floor2(dimensiRes.p / unitFactor)));
+                          setLStr(String(floor2(dimensiRes.l / unitFactor)));
+                          setTStr(String(floor2(dimensiRes.t / unitFactor)));
                           setMode('bahan');
                         }}
                         className="mt-4 w-full bg-slate-700 hover:bg-slate-600 text-white font-bold py-2 px-4 uppercase tracking-widest text-[10px] flex justify-center items-center transition-colors duration-200"
